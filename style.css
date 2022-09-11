@@ -44,8 +44,11 @@ body {
 }
 
 #pn1 {
-    width:  calc(80vh/8);
-    height: calc(80vh/8);
+    width:  calc(72vh/8);
+    height: calc(72vh/8);
+    margin-left: calc(2.5vh/8);
+    margin-top: calc(2.5vh/8);
+    z-index: 5;
 }
 
 /* .black:hover {
