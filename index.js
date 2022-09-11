@@ -1,20 +1,20 @@
 const boxes = document.querySelectorAll(".box");
-let previousBox;
-let currentBox;
-let isBlack;
-
+let pn1 = document.getElementById("pn1");
+let pawnSelected = false;
+let currentBox = "";
 boxes.forEach((box) => {
   box.addEventListener("click", (e) => {
-    if (previousBox) {
-      if (isBlack) {
-        previousBox.style.setProperty("background-color", "#8b4513");
-      } else {
-        previousBox.style.setProperty("background-color", "#ffe4c4");
-      }
+    if (pawnSelected && currentBox != box && currentBox != "") {
+      currentBox.innerHTML = "";
+      box.innerHTML = pn1.outerHTML;
+      pawnSelected = false;
+      currentBox = box;
+    } else {
+      currentBox = box;
     }
-    currentBox = e.target;
-    isBlack = currentBox.classList.value.split(" ").includes("black");
-    currentBox.style.setProperty("--bgc", "#f4a460");
-    previousBox = currentBox;
   });
+});
+
+pn1.addEventListener("click", (e) => {
+  pawnSelected = !pawnSelected;
 });
