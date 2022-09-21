@@ -43,7 +43,7 @@ body {
     padding: 0;
 }
 
-#pn1 {
+.piece {
     width:  calc(72vh/8);
     height: calc(72vh/8);
     margin-left: calc(2.5vh/8);
