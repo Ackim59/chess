@@ -504,8 +504,8 @@ const initChessboard = (chessBoard, fen) => {
                 p += parseInt(elt)
             }
         j += 1;
-    }
-  }
+    };
+  };
 };
 
 
