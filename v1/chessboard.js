@@ -1,4 +1,5 @@
-export { ChessBoard, Pawn, Rook, Bishop, Knight, Queen, King, initChessboard, actualPositionPieceList };
+export { ChessBoard, Pawn, Rook, Bishop, Knight, Queen, King, initChessboard,
+         fen, currentPiece, otherPiece };
 
 const pieceList = ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br",
 "bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp",
@@ -11,7 +12,12 @@ const initialPositionList = ["18", "28", "38", "48", "58", "68", "78", "88",
           "11", "21", "31", "41", "51", "61", "71", "81",
           ];
 
+const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+let currentPiece;
+let otherPiece;
 let actualPositionPieceList = [pieceList, initialPositionList].reduce((a, b) => a.map((v, i) => v + '-' + b[i]));
+
 
 class ChessBoard extends HTMLElement {
     constructor() {
@@ -19,6 +25,26 @@ class ChessBoard extends HTMLElement {
         const boardLayout = document.getElementById("board-layout");
         boardLayout.append(this);    
     }
+
+    connectedCallback() {
+      this.addEventListener("click", this.selection)
+    }
+
+    selection = (e) => {
+      if (currentPiece) {
+        const newPosition = this.getPosition(e);
+        currentPiece.move(newPosition, otherPiece, actualPositionPieceList);
+        otherPiece = undefined;
+      }
+    }
+
+    getPosition = (e) => {
+      const bounds = this.getBoundingClientRect()
+      let positionX = Math.ceil(((e.clientX - bounds.left) / this.clientWidth) * 8);
+      let positionY = Math.ceil(((this.clientHeight - (e.clientY - bounds.top)) / this.clientHeight) * 8);
+      return positionX.toString() + positionY.toString();
+    };
+
 };
 customElements.define("chess-board", ChessBoard);
 
@@ -31,11 +57,50 @@ class Piece extends HTMLDivElement {
   }
 
   connectedCallback() {
-    this.possiblePositions = this.moveConditions(actualPositionPieceList);
+    this.addEventListener("click", this.selection);
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    console.log("coucou");
+  displayPositionsPattern = (pos) => {
+    const elt = document.createElement("div");
+    const chessboard = document.getElementsByTagName("chess-board");
+    elt.classList.add("spot", "square-" + pos)
+    chessboard[0].appendChild(elt);
+  }
+
+  removePositionsPattern = () => {
+    const shine = document.getElementsByClassName("spot");
+    while (shine[0]) {
+      shine[0].parentNode.removeChild(shine[0]);
+    }
+  }
+
+  selection = (e) => {
+    this.possiblePositions = this.moveConditions(actualPositionPieceList);
+    if (currentPiece != this) {
+      if (currentPiece == undefined) {
+        this.selected = true;
+        currentPiece = this;
+        currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
+      } else if (currentPiece.color == this.color ||
+                !currentPiece.selected) {
+        currentPiece.possiblePositions.forEach(currentPiece.removePositionsPattern)
+        this.selected = true;
+        currentPiece = this;
+        currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
+      } else if (currentPiece.color != this.color && currentPiece.possiblePositions.includes(e.target.position)) {
+        otherPiece = this;
+      } else {
+        currentPiece.selected = !currentPiece.selected
+        currentPiece.possiblePositions.forEach(this.removePositionsPattern);
+      }
+    } else {
+      currentPiece.selected = !currentPiece.selected
+      if (currentPiece.selected) {
+        currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
+      } else {
+        currentPiece.possiblePositions.forEach(this.removePositionsPattern);
+      }
+    }
   }
 
   changeCharacter = (c, move) => String.fromCharCode(c.charCodeAt(0) + move);
@@ -66,11 +131,13 @@ class Piece extends HTMLDivElement {
       if (this.selected && this.position != newPosition) {
         if (!otherPiece) {
           this.changePosition(newPosition)
+          currentPiece.possiblePositions.forEach(this.removePositionsPattern)
           actualPositionPieceList[indexActualPosition] = this.pieceType + "-" + this.position;
         } else {
           const indexOtherPosition = actualPositionPieceList.indexOf(otherPiece.pieceType + "-" + otherPiece.position);
           otherPiece.className = "element-pool";
           this.changePosition(newPosition)
+          currentPiece.possiblePositions.forEach(this.removePositionsPattern)
           actualPositionPieceList[indexActualPosition] = this.pieceType + "-" + this.position;
           actualPositionPieceList.splice(indexOtherPosition,1)
         }
@@ -168,6 +235,7 @@ class KnightKing extends Piece {
         newPosition = this.generatePosition(xPosition, xMove, yPosition, yMove);
         xPosition = newPosition[0];
         yPosition = newPosition[1];
+
       } else if (isPiece && areDifferentColor) {
         possiblePositions.push(newPosition);
       }
@@ -182,8 +250,8 @@ class Pawn extends Piece {
   constructor(position, color) {
     super();
     this.position = position;
-    this.initialPosition = position;
     this.possiblePositions = [];
+    this.initialPosition = position;
     this.color = color;
     this.pieceType = this.color + "p";
     this.selected = false;
@@ -374,28 +442,70 @@ class King extends KnightKing {
 };
 customElements.define("king-custom", King, { extends: "div" });
 
-const initChessboard = (chessBoard, initialPositionPieceList) => {
-    let color;
-    let position;
-    let pieceType;
-    for (let i = 0; i < initialPositionPieceList.length; i++) {
-        color =  initialPositionPieceList[i].slice(0,1)
-        position = initialPositionPieceList[i].slice(3,5)
-        pieceType = initialPositionPieceList[i].slice(1,2)
-        if (pieceType == "p") {
-            chessBoard.appendChild(new Pawn(position, color));
-        } else if (pieceType == "r") {
-            chessBoard.appendChild(new Rook(position, color));
-        } else if (pieceType == "b") {
-            chessBoard.appendChild(new Bishop(position, color));
-        } else if (pieceType == "n") {
-            chessBoard.appendChild(new Knight(position, color));
-        } else if (pieceType == "q") {
-            chessBoard.appendChild(new Queen(position, color));
-        } else if (pieceType == "k") {
-            chessBoard.appendChild(new King(position, color));
-        };
+const initChessboard = (chessBoard, fen) => {
+  const fenSplitted = fen.split(/\/| /);
+  for (let i = 0; i < 8; i++) {
+    const fenRange = fenSplitted[i];
+    let j = 0;
+    let p = 1;
+    while (fenRange[j]) {
+        const position = p.toString() + (8-i).toString();
+        const elt = fenRange[j];
+        switch (elt) {
+            case 'r':
+                chessBoard.appendChild(new Rook(position, "b"));
+                p += 1;
+                break;
+            case 'n':
+                chessBoard.appendChild(new Knight(position, "b"));
+                p += 1;
+                break;
+            case 'b':
+                chessBoard.appendChild(new Bishop(position, "b"));
+                p += 1;
+                break;
+            case 'q':
+                chessBoard.appendChild(new Queen(position, "b"));
+                p += 1;
+                break;
+            case 'k':
+                chessBoard.appendChild(new King(position, "b"));
+                p += 1;
+                break;
+            case 'p':
+                chessBoard.appendChild(new Pawn(position, "b"));
+                p += 1;
+                break;
+            case 'R':
+                chessBoard.appendChild(new Rook(position, "w"));
+                p += 1;
+                break;
+            case 'N':
+                chessBoard.appendChild(new Knight(position, "w"));
+                p += 1;
+                break;
+            case 'B':
+                chessBoard.appendChild(new Bishop(position, "w"));
+                p += 1;
+                break;
+            case 'Q':
+                chessBoard.appendChild(new Queen(position, "w"));
+                p += 1;
+                break;
+            case 'K':
+                chessBoard.appendChild(new King(position, "w"));
+                p += 1;
+                break;
+            case 'P':
+                p += 1;
+                chessBoard.appendChild(new Pawn(position, "w"));
+                break;
+            default:
+                p += parseInt(elt)
+            }
+        j += 1;
     }
+  }
 };
 
 

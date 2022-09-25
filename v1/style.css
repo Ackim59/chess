@@ -32,10 +32,6 @@ chess-board {
 
 }
 
-.shine {
-    background-color: yellowgreen;
-}
-
 .element-pool {
     position: absolute;
     transform: translate(-10000px);
@@ -50,6 +46,21 @@ chess-board {
     height: 12.5vh;
     top: 0%;
     left: 0%;
+    z-index: 1;
+}
+
+.spot {
+    position: absolute;
+    background-repeat: no-repeat;
+    background-size: 100%;
+    background-image: url("spot.png");
+    overflow: hidden;
+    width: 12.5vh;
+    height: 12.5vh;
+    top: 0%;
+    left: 0%;
+    opacity: 0.6;
+    z-index: 0;
 }
 
 .piece.bp {
