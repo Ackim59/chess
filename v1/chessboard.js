@@ -1,5 +1,6 @@
 export { ChessBoard, Pawn, Rook, Bishop, Knight, Queen, King, initChessboard,
-         fen, currentPiece, otherPiece };
+         fen };
+import { map } from "./index.js";
 
 const pieceList = ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br",
 "bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp",
@@ -74,27 +75,30 @@ class Piece extends HTMLDivElement {
     }
   }
 
+  changeSelection = (piece) => {
+    piece.selected = !piece.selected; 
+  }
+
   selection = (e) => {
     this.possiblePositions = this.moveConditions(actualPositionPieceList);
     if (currentPiece != this) {
       if (currentPiece == undefined) {
-        this.selected = true;
         currentPiece = this;
+        this.changeSelection(currentPiece);
         currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
-      } else if (currentPiece.color == this.color ||
-                !currentPiece.selected) {
-        currentPiece.possiblePositions.forEach(currentPiece.removePositionsPattern)
-        this.selected = true;
+      } else if (currentPiece.color == this.color || !currentPiece.selected) {
+        currentPiece.possiblePositions.forEach(this.removePositionsPattern)
         currentPiece = this;
+        this.changeSelection(currentPiece);
         currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
-      } else if (currentPiece.color != this.color && currentPiece.possiblePositions.includes(e.target.position)) {
+      } else if (currentPiece.possiblePositions.includes(e.target.position)) {
         otherPiece = this;
       } else {
-        currentPiece.selected = !currentPiece.selected
+        this.changeSelection(currentPiece);
         currentPiece.possiblePositions.forEach(this.removePositionsPattern);
       }
     } else {
-      currentPiece.selected = !currentPiece.selected
+      this.changeSelection(currentPiece);
       if (currentPiece.selected) {
         currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
       } else {
@@ -294,7 +298,7 @@ class Pawn extends Piece {
       isRightPiece = rightPiece[0] != this.color;
     }
     if (beforePiece) {
-      isBeforePiece = beforePiece[0] != this.color;
+      isBeforePiece = true;
     }
 
     if (!isLeftPiece && !isRightPiece) {
@@ -444,6 +448,7 @@ customElements.define("king-custom", King, { extends: "div" });
 
 const initChessboard = (chessBoard, fen) => {
   const fenSplitted = fen.split(/\/| /);
+  const map = {"w":[], "b":[]}
   for (let i = 0; i < 8; i++) {
     const fenRange = fenSplitted[i];
     let j = 0;
@@ -454,51 +459,63 @@ const initChessboard = (chessBoard, fen) => {
         switch (elt) {
             case 'r':
                 chessBoard.appendChild(new Rook(position, "b"));
+                map.b.push(position);
                 p += 1;
                 break;
             case 'n':
                 chessBoard.appendChild(new Knight(position, "b"));
+                map.b.push(position);
                 p += 1;
                 break;
             case 'b':
                 chessBoard.appendChild(new Bishop(position, "b"));
+                map.b.push(position);
                 p += 1;
                 break;
             case 'q':
                 chessBoard.appendChild(new Queen(position, "b"));
+                map.b.push(position);
                 p += 1;
                 break;
             case 'k':
                 chessBoard.appendChild(new King(position, "b"));
+                map.b.push(position);
                 p += 1;
                 break;
             case 'p':
                 chessBoard.appendChild(new Pawn(position, "b"));
+                map.b.push(position);
                 p += 1;
                 break;
             case 'R':
                 chessBoard.appendChild(new Rook(position, "w"));
+                map.w.push(position);
                 p += 1;
                 break;
             case 'N':
                 chessBoard.appendChild(new Knight(position, "w"));
+                map.w.push(position);
                 p += 1;
                 break;
             case 'B':
                 chessBoard.appendChild(new Bishop(position, "w"));
+                map.w.push(position);
                 p += 1;
                 break;
             case 'Q':
                 chessBoard.appendChild(new Queen(position, "w"));
+                map.w.push(position);
                 p += 1;
                 break;
             case 'K':
                 chessBoard.appendChild(new King(position, "w"));
+                map.w.push(position);
                 p += 1;
                 break;
             case 'P':
                 p += 1;
                 chessBoard.appendChild(new Pawn(position, "w"));
+                map.w.push(position);
                 break;
             default:
                 p += parseInt(elt)
@@ -506,6 +523,6 @@ const initChessboard = (chessBoard, fen) => {
         j += 1;
     };
   };
+  return map;
 };
-
 

@@ -1,5 +1,8 @@
 import { ChessBoard, initChessboard, fen } from "./chessboard.js";
 
+let map;
 let chessBoard = new ChessBoard();
 
-initChessboard(chessBoard,fen);
+map = initChessboard(chessBoard,fen);
+
+export { map };
