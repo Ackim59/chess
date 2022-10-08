@@ -1,8 +1,7 @@
-import { ChessBoard, initChessboard, fen } from "./chessboard.js";
+import { ChessBoard } from "./chessboard.js";
 
-let map;
+const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 let chessBoard = new ChessBoard();
 
-map = initChessboard(chessBoard,fen);
-
-export { map };
+chessBoard.initChessboard(fen);
