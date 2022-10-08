@@ -1,0 +1,25 @@
+Ajouter une méthode pour la classe Piece de mise à jour des couvertures des noirs et des blancs à chaque mouvement de pièce.
+-> c'est-à-dire lancer pour chaque pièce la méthode moveConditions et stocker pour chacune d'elles le résultat dans un objet
+javascript du type :
+
+coverage = {"b": {"p": ["12"], "b":["36",...], ...}, "w": {...}}
+
+mise à jour grâce à :
+coverage[piece.color][piece.id] = piece.moveConditions();
+-> créer un id pour chaque pièce.
+
+Ajouter un événement associé au mouvement de pièce (custom event) pour la prise en compte de l'échec au roi et de la prise
+en passant.
+
+à implémenter pour le jeu :
+
+échec au roi
+échec et mat
+pat (mouvement impossible, répétition)
+petit et grand rock
+prise en passant
+alternance blanc/noir
+chronomètre (durée finie pour une partie)
+abandon
+égalité (manque de matériel des deux côtés pour mater,
+         roi seul pour un camp et temps fini pour l'autre camp avec avantage matériel décisif)

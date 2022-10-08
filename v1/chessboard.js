@@ -1,27 +1,18 @@
-export { ChessBoard, Pawn, Rook, Bishop, Knight, Queen, King, initChessboard,
-         fen, currentPiece, otherPiece };
+export { ChessBoard, Pawn, Rook, Bishop, Knight, Queen, King };
 
-const pieceList = ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br",
-"bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp",
-"wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp",
-"wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr",
-];
-const initialPositionList = ["18", "28", "38", "48", "58", "68", "78", "88",
-          "17", "27", "37", "47", "57", "67", "77", "87",
-          "12", "22", "32", "42", "52", "62", "72", "82",
-          "11", "21", "31", "41", "51", "61", "71", "81",
-          ];
 
-const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 let currentPiece;
 let otherPiece;
-let actualPositionPieceList = [pieceList, initialPositionList].reduce((a, b) => a.map((v, i) => v + '-' + b[i]));
-
 
 class ChessBoard extends HTMLElement {
     constructor() {
         super();
+        this.fen = "";
+        this.pieceCollection = {"w":[] , "b":[]};
+        this.pattern = {"w":[] , "b":[]};
+        this.map = {};
+
         const boardLayout = document.getElementById("board-layout");
         boardLayout.append(this);    
     }
@@ -30,10 +21,129 @@ class ChessBoard extends HTMLElement {
       this.addEventListener("click", this.selection)
     }
 
+    initChessboard = (fen) => {
+      this.fen = fen;
+      this.map = this.getMap();
+      const fenSplitted = this.fen.split(/\/| /);
+      let piece;
+      for (let lin = 0; lin < 8; lin++) {
+        const fenRange = fenSplitted[lin];
+        let j = 0;
+        let col = 1;
+        let [p, r, n, b, q, k] = [1, 1, 1, 1, 1, 1];
+        while (fenRange[j]) {
+          const position = col.toString() + (8-lin).toString();
+          const elt = fenRange[j];
+            switch (elt) {
+                case 'r':
+                    piece = new Rook(position, "b", r);
+                    this.pieceCollection.b.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    r += 1;
+                    col += 1;
+                    break;
+                case 'n':
+                    piece = new Knight(position, "b", n);
+                    this.pieceCollection.b.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    n += 1
+                    col += 1;
+                    break;
+                case 'b':
+                    piece = new Bishop(position, "b", b);
+                    this.pieceCollection.b.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    b += 1
+                    col += 1;
+                    break;
+                case 'q':
+                    piece = new Queen(position, "b", q);
+                    this.pieceCollection.b.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    q += 1;
+                    col += 1;
+                    break;
+                case 'k':
+                    piece = new King(position, "b", k);
+                    this.pieceCollection.b.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    k += 1
+                    col += 1;
+                    break;
+                case 'p':
+                    piece = new Pawn(position, "b", p);
+                    this.pieceCollection.b.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    p += 1
+                    col += 1;
+                    break;
+                case 'R':
+                    piece = new Rook(position, "w", r);
+                    this.pieceCollection.w.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(this.pieceCollection.w[this.pieceCollection.w.length -1]);
+                    r += 1;
+                    col += 1;
+                    break;
+                case 'N':
+                    piece = new Knight(position, "w", n);
+                    this.pieceCollection.w.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(this.pieceCollection.w[this.pieceCollection.w.length -1]);
+                    n += 1
+                    col += 1;
+                    break;
+                case 'B':
+                    piece = new Bishop(position, "w", b);
+                    this.pieceCollection.w.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(this.pieceCollection.w[this.pieceCollection.w.length -1]);
+                    b += 1;
+                    col += 1;
+                    break;
+                case 'Q':
+                    piece = new Queen(position, "w", q);
+                    this.pieceCollection.w.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    q += 1;
+                    col += 1;
+                    break;
+                case 'K':
+                    piece = new King(position, "w", k);
+                    this.pieceCollection.w.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    k += 1;
+                    col += 1;
+                    break;
+                case 'P':
+                    piece = new Pawn(position, "w", p);
+                    this.pieceCollection.w.push(piece);
+                    this.pieceCollection[piece.pieceId] = piece;
+                    this.appendChild(piece);
+                    p += 1;
+                    col += 1;
+                    break;
+                default:
+                    col += parseInt(elt)
+                }
+            j += 1;
+        };
+      };
+      this.getPattern();
+    };
+
     selection = (e) => {
       if (currentPiece) {
         const newPosition = this.getPosition(e);
-        currentPiece.move(newPosition, otherPiece, actualPositionPieceList);
+        currentPiece.move(newPosition, otherPiece);
         otherPiece = undefined;
       }
     }
@@ -45,8 +155,136 @@ class ChessBoard extends HTMLElement {
       return positionX.toString() + positionY.toString();
     };
 
+    getPattern = () => {
+      for (let color in this.pieceCollection) {
+          if (!+color) {
+            for (let i = 0; i < this.pieceCollection[color].length; i++) {
+              const pieceId = this.pieceCollection[color][i].pieceId;
+              this.pattern[pieceId] = this.pieceCollection[color][i].moveConditions(this.map);
+              this.pattern[color] = this.pattern[color].concat(this.pattern[pieceId]['possible']);
+          }
+        }
+      }
+    }
+
+    updatePattern = (piece, previousPosition, otherPiece=undefined) => {
+      const newPosition = piece.position;
+      const color = piece.color;
+      // We update pattern of pieces for which possible positions are different after piece move.
+      for (let id in this.pattern) {
+        if (this.pieceCollection[id].color == color && id != "w" && id != "b" && this.pieceCollection[id] != piece) {
+          if (this.pattern[id]["possible"].includes(previousPosition)
+          || this.pattern[id]["possible"].includes(newPosition)
+          || this.pattern[id]["blocked"].includes(previousPosition)
+          || this.pattern[id]["blocked"].includes(newPosition)) {
+                console.log(id);
+            this.pattern[id] = this.pieceCollection[id].moveConditions(this.map);
+          }
+        } else if (this.pieceCollection[id] == piece) {
+          this.pattern[id] = piece.moveConditions(this.map);
+        }
+      }
+      this.pattern[color] = [];
+      if (otherPiece) {
+        this.pattern[otherPiece.color] = [];
+        this.pattern[otherPiece.pieceId] = {"possible":[],"blocked":[]};
+      }
+      for (let id in this.pattern) {
+        if (id != "w" && id != "b" && this.pieceCollection[id].color == color) {
+          this.pattern[color] = this.pattern[color].concat(this.pattern[id]["possible"]);
+        } else if (otherPiece && id != "w" && id != "b" && this.pieceCollection[id].color != color) {
+          this.pattern[otherPiece.color] = this.pattern[otherPiece.color].concat(this.pattern[id]["possible"]);
+        }
+      }
+    }
+
+    getMap = () => {
+      const fenSplitted = this.fen.split(/\/| /);
+      const map = {"w":[], "b":[], "e":[]}
+      for (let lin = 0; lin < 8; lin++) {
+        const fenRange = fenSplitted[lin];
+        let j = 0;
+        let col = 1;
+        while (fenRange[j]) {
+            const position = col.toString() + (8-lin).toString();
+            const elt = fenRange[j];
+            switch (elt) {
+                case 'r':
+                    map.b.push(position);
+                    col += 1;
+                    break;
+                case 'n':
+                    map.b.push(position);
+                    col += 1;
+                    break;
+                case 'b':
+                    map.b.push(position);
+                    col += 1;
+                    break;
+                case 'q':
+                    map.b.push(position);
+                    col += 1;
+                    break;
+                case 'k':
+                    map.b.push(position);
+                    col += 1;
+                    break;
+                case 'p':
+                    map.b.push(position);
+                    col += 1;
+                    break;
+                case 'R':
+                    map.w.push(position);
+                    col += 1;
+                    break;
+                case 'N':
+                    map.w.push(position);
+                    col += 1;
+                    break;
+                case 'B':
+                    map.w.push(position);
+                    col += 1;
+                    break;
+                case 'Q':
+                    map.w.push(position);
+                    col += 1;
+                    break;
+                case 'K':
+                    map.w.push(position);
+                    col += 1;
+                    break;
+                case 'P':
+                    col += 1;
+                    map.w.push(position);
+                    break;
+                default:
+                    for (let i = 0; i < parseInt(elt); i++) {
+                      map.e.push((col+i).toString() + (8-lin).toString())
+                    }
+                    col += parseInt(elt)
+                }
+            j += 1;
+        };
+      };
+      return map;
+    }
+
+    updateMap = (newPosition, currentPiece, otherPiece=undefined) => {
+      if (!otherPiece) {
+        this.map[currentPiece.color].splice(this.map[currentPiece.color].indexOf(currentPiece.position), 1);
+        this.map.e.splice(this.map.e.indexOf(newPosition), 1);
+        this.map[currentPiece.color].push(newPosition), this.map.e.push(currentPiece.position);
+      } else {
+        this.map[currentPiece.color].splice(this.map[currentPiece.color].indexOf(currentPiece.position), 1);
+        this.map[currentPiece.color].push(newPosition);
+        this.map.e.push(currentPiece.position);
+        this.map[otherPiece.color].splice(this.map[otherPiece.color].indexOf(newPosition), 1);
+      }
+    }
 };
 customElements.define("chess-board", ChessBoard);
+
+
 
 class Piece extends HTMLDivElement {
   constructor() {
@@ -61,53 +299,57 @@ class Piece extends HTMLDivElement {
   }
 
   displayPositionsPattern = (pos) => {
-    const elt = document.createElement("div");
+    const spot = document.createElement("div");
     const chessboard = document.getElementsByTagName("chess-board");
-    elt.classList.add("spot", "square-" + pos)
-    chessboard[0].appendChild(elt);
+    spot.classList.add("spot", "square-" + pos)
+    chessboard[0].appendChild(spot);
   }
 
   removePositionsPattern = () => {
-    const shine = document.getElementsByClassName("spot");
-    while (shine[0]) {
-      shine[0].parentNode.removeChild(shine[0]);
+    const spot = document.getElementsByClassName("spot");
+    while (spot[0]) {
+      spot[0].parentNode.removeChild(spot[0]);
     }
   }
 
+  changeSelection = (piece) => {
+    piece.selected = !piece.selected; 
+  }
+
   selection = (e) => {
-    this.possiblePositions = this.moveConditions(actualPositionPieceList);
+    let map = document.getElementsByTagName("chess-board")[0].map;
+    this.possiblePositions = this.moveConditions(map);
     if (currentPiece != this) {
       if (currentPiece == undefined) {
         this.selected = true;
         currentPiece = this;
-        currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
-      } else if (currentPiece.color == this.color ||
-                !currentPiece.selected) {
-        currentPiece.possiblePositions.forEach(currentPiece.removePositionsPattern)
+        currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
+      } else if (currentPiece.color == this.color || !currentPiece.selected) {
+        currentPiece.possiblePositions["possible"].forEach(currentPiece.removePositionsPattern)
         this.selected = true;
         currentPiece = this;
-        currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
-      } else if (currentPiece.color != this.color && currentPiece.possiblePositions.includes(e.target.position)) {
+        currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
+      } else if (currentPiece.possiblePositions["possible"].includes(e.target.position)) {
         otherPiece = this;
       } else {
-        currentPiece.selected = !currentPiece.selected
-        currentPiece.possiblePositions.forEach(this.removePositionsPattern);
+        this.changeSelection(currentPiece);
+        currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern);
       }
     } else {
-      currentPiece.selected = !currentPiece.selected
+      this.changeSelection(currentPiece);
       if (currentPiece.selected) {
-        currentPiece.possiblePositions.forEach(this.displayPositionsPattern);
+        currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
       } else {
-        currentPiece.possiblePositions.forEach(this.removePositionsPattern);
+        currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern);
       }
     }
   }
 
   changeCharacter = (c, move) => String.fromCharCode(c.charCodeAt(0) + move);
 
-  generatePosition = (xPosition, xMove, yPosition, yMove) => {
-    let xNewPosition = this.changeCharacter(xPosition, xMove);
-    let yNewPosition = this.changeCharacter(yPosition, yMove);
+  generatePosition = (position, move) => {
+    let xNewPosition = this.changeCharacter(position[0], move[0]);
+    let yNewPosition = this.changeCharacter(position[1], move[1]);
     return xNewPosition + yNewPosition;
   };
   
@@ -121,30 +363,32 @@ class Piece extends HTMLDivElement {
     this.selected = false;
     }
   }
-  
-  moveConditions = (actualPositionPieceList) => {};
 
-  move = (newPosition, otherPiece, actualPositionPieceList) => {
-    const possiblePositions = this.moveConditions(actualPositionPieceList)
-    const indexActualPosition = actualPositionPieceList.indexOf(this.pieceType + "-" + this.position);
-    if (possiblePositions.includes(newPosition)) {
-      if (this.selected && this.position != newPosition) {
-        if (!otherPiece) {
-          this.changePosition(newPosition)
-          currentPiece.possiblePositions.forEach(this.removePositionsPattern)
-          actualPositionPieceList[indexActualPosition] = this.pieceType + "-" + this.position;
-        } else {
-          const indexOtherPosition = actualPositionPieceList.indexOf(otherPiece.pieceType + "-" + otherPiece.position);
-          otherPiece.className = "element-pool";
-          this.changePosition(newPosition)
-          currentPiece.possiblePositions.forEach(this.removePositionsPattern)
-          actualPositionPieceList[indexActualPosition] = this.pieceType + "-" + this.position;
-          actualPositionPieceList.splice(indexOtherPosition,1)
-        }
+  move = (newPosition, otherPiece) => {
+    const chessboard = document.getElementsByTagName("chess-board")[0];
+    const previousPosition = this.position;
+    let map = chessboard.map;
+    if (this.possiblePositions["possible"].includes(newPosition) && this.selected && this.position != newPosition) {
+      if (map.e.includes(newPosition)) {
+        chessboard.updateMap(newPosition,this);
+        this.changePosition(newPosition);
+        currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern)
+        // mise à jour des couvertures
+        chessboard.updatePattern(this, previousPosition);
+
+      } else if (!map.e.includes(newPosition) && !map[this.color].includes(newPosition)) {
+        chessboard.updateMap(newPosition,this,otherPiece)
+        otherPiece.className = "element-pool"; // the captured piece is moved off the chessboard
+        this.changePosition(newPosition)
+        currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern)
+        // mise à jour des couvertures
+        chessboard.updatePattern(this, previousPosition, otherPiece);
       }
     }
   };
 };
+
+
 
 class RookBishopQueen extends Piece {
   constructor() {
@@ -154,45 +398,20 @@ class RookBishopQueen extends Piece {
     }
   }
 
-  moveConditions = (actualPositionPieceList) => {
-
-    let coord = ["1", "2", "3", "4", "5", "6", "7", "8"]
-    const possiblePositions = [];
+  moveConditions = (map) => {
     
+    const possiblePositions = {"possible":[], "blocked":[]};
     for (let i = 0; i < this.moveArray.length; i++) {
-      
-      const xMove = this.moveArray[i][0];
-      const yMove = this.moveArray[i][1];
-      let newPosition = this.generatePosition(
-        this.position[0],
-        xMove,
-        this.position[1],
-        yMove
-      );
-      let xPosition = newPosition[0];
-      let yPosition = newPosition[1];
-      let isPiece = actualPositionPieceList.find(elt => elt.includes(newPosition));
-      let areDifferentColor;
-      if (isPiece) {
-        areDifferentColor = isPiece[0] != this.color;
-      } else {
-        areDifferentColor = true;
+      const move = this.moveArray[i];
+      let newPosition = this.generatePosition(this.position,move)
+      while (map.e.includes(newPosition)) {
+        possiblePositions["possible"].push(newPosition);
+        newPosition = this.generatePosition(newPosition, move);
       }
-
-      while (coord.includes(xPosition) && coord.includes(yPosition) && !isPiece) {
-          possiblePositions.push(newPosition);
-          newPosition = this.generatePosition(xPosition, xMove, yPosition, yMove);
-          isPiece = actualPositionPieceList.find(elt => elt.includes(newPosition))
-          if (isPiece) {
-            areDifferentColor = isPiece[0] != this.color;
-          } else {
-            areDifferentColor = true;
-          }
-          xPosition = newPosition[0];
-          yPosition = newPosition[1];
-      }
-      if (isPiece && areDifferentColor) {
-        possiblePositions.push(newPosition);
+      if (!map[this.color].includes(newPosition) && map.e.concat(map.w,map.b).includes(newPosition)) {
+        possiblePositions["possible"].push(newPosition);
+      } else if (map[this.color].includes(newPosition) && map.e.concat(map.w,map.b).includes(newPosition)) {
+        possiblePositions["blocked"].push(newPosition)
       }
 
     }
@@ -201,54 +420,12 @@ class RookBishopQueen extends Piece {
   }
 };
 
-class KnightKing extends Piece {
-  constructor() {
-    super();
-    if (this.constructor == Piece) {
-      throw new Error("Abstract classes can't be instantiated.");
-    }
-  }
 
-  moveConditions = (actualPositionPieceList) => {
-    let coord = ["1", "2", "3", "4", "5", "6", "7", "8"]
-    const possiblePositions = [];
-    for (let i = 0; i < this.moveArray.length; i++) {
-      const xMove = this.moveArray[i][0];
-      const yMove = this.moveArray[i][1];
-      let newPosition = this.generatePosition(
-        this.position[0],
-        xMove,
-        this.position[1],
-        yMove
-      );
-      let xPosition = newPosition[0];
-      let yPosition = newPosition[1];
-      let isPiece = actualPositionPieceList.find(elt => elt.includes(newPosition));
-      let areDifferentColor;
-      if (isPiece) {
-        areDifferentColor = isPiece[0] != this.color;
-      } else {
-        areDifferentColor = true;
-      }
-      if (coord.includes(xPosition) && coord.includes(yPosition) && !isPiece) {
-        possiblePositions.push(newPosition);
-        newPosition = this.generatePosition(xPosition, xMove, yPosition, yMove);
-        xPosition = newPosition[0];
-        yPosition = newPosition[1];
-
-      } else if (isPiece && areDifferentColor) {
-        possiblePositions.push(newPosition);
-      }
-    }
-    this.possiblePositions = possiblePositions;
-    return possiblePositions;
-
-  };
-};
 
 class Pawn extends Piece {
-  constructor(position, color) {
+  constructor(position, color, pieceId) {
     super();
+    this.pieceId = color + "p" + pieceId;
     this.position = position;
     this.possiblePositions = [];
     this.initialPosition = position;
@@ -258,7 +435,7 @@ class Pawn extends Piece {
     this.classList.add("piece", this.pieceType ,"square-" + this.position);
   }
 
-  moveConditions = (actualPositionPieceList) => {
+  moveConditions = (map) => {
     let moveArray;
     if (this.color == "w") {
       moveArray = [
@@ -275,69 +452,44 @@ class Pawn extends Piece {
         [0, -2],
       ];   
     }
-    let coord = ["1", "2", "3", "4", "5", "6", "7", "8"]
-    const possiblePositions = [];
-    const isInitialMove = this.position == this.initialPosition;
-    const leftPiecePosition = this.generatePosition(this.position[0], moveArray[1][0], this.position[1], moveArray[1][1]);
-    const rightPiecePosition = this.generatePosition(this.position[0], moveArray[2][0], this.position[1], moveArray[2][1]);
-    const beforePiecePosition = this.generatePosition(this.position[0], moveArray[0][0], this.position[1], moveArray[0][1]);
-    const leftPiece = actualPositionPieceList.find(elt => elt.includes(leftPiecePosition));
-    const rightPiece = actualPositionPieceList.find(elt => elt.includes(rightPiecePosition));
-    const beforePiece = actualPositionPieceList.find(elt => elt.includes(beforePiecePosition));
-    let isLeftPiece;
-    let isRightPiece;
-    let isBeforePiece;
-    if (leftPiece) {
-      isLeftPiece = leftPiece[0] != this.color;
+    const possiblePositions = {"possible":[], "blocked":[]};
+    let potentialMove = [];
+    for (let i = 0; i < moveArray.length; i++) {
+      const move = moveArray[i];
+      potentialMove.push(this.generatePosition(this.position, move));
     }
-    if (rightPiece) {
-      isRightPiece = rightPiece[0] != this.color;
+    const isBeforeMoveAuthorized = map.e.includes(potentialMove[0]) ? true : false;
+    const isLargeBeforeMoveAuthorised = (map.e.includes(potentialMove[0]) && map.e.includes(potentialMove[3])
+                                         && (this.position == this.initialPosition)) ? true : false;
+    const ifLeftCapturePossible = (!map.e.includes(potentialMove[1]) && !map[this.color].includes(potentialMove[1])) ? true : false;
+    const isRightCapturePossible = (!map.e.includes(potentialMove[2]) && !map[this.color].includes(potentialMove[2])) ? true : false;
+    if (isBeforeMoveAuthorized && map.e.concat(map.w,map.b).includes(potentialMove[0])) {
+      possiblePositions["possible"].push(potentialMove[0]);
+    } else if (!isBeforeMoveAuthorized && map.e.concat(map.w,map.b).includes(potentialMove[0])) {
+      possiblePositions["blocked"].push(potentialMove[0])
     }
-    if (beforePiece) {
-      isBeforePiece = beforePiece[0] != this.color;
+    if (isLargeBeforeMoveAuthorised && map.e.concat(map.w,map.b).includes(potentialMove[3])) {
+      possiblePositions["possible"].push(potentialMove[3]);
+    } else if (!isLargeBeforeMoveAuthorised && map.e.concat(map.w,map.b).includes(potentialMove[3])
+               && this.position == this.initialPosition) {
+      possiblePositions["blocked"].push(potentialMove[3])
     }
-
-    if (!isLeftPiece && !isRightPiece) {
-      moveArray.splice(1,2);
-    } else if (!isLeftPiece) {
-      moveArray.splice(1,1);
-    } else if (!isRightPiece) {
-      moveArray.splice(2,1);
+    if (ifLeftCapturePossible && map.e.concat(map.w,map.b).includes(potentialMove[1])) {
+      possiblePositions["possible"].push(potentialMove[1]);
     }
-    if (isBeforePiece) {
-      moveArray.splice(0,1);
+    if (isRightCapturePossible && map.e.concat(map.w,map.b).includes(potentialMove[2])) {
+      possiblePositions["possible"].push(potentialMove[2]);
     }
-
-    if (!isInitialMove || isBeforePiece) {
-      moveArray.splice(-1);
-    }
-      for (let i = 0; i < moveArray.length; i++) {
-        const xMove = moveArray[i][0];
-        const yMove = moveArray[i][1];
-        let newPosition = this.generatePosition(
-          this.position[0],
-          xMove,
-          this.position[1],
-          yMove
-        );
-        let xPosition = newPosition[0];
-        let yPosition = newPosition[1];
-        if (coord.includes(xPosition) && coord.includes(yPosition) ) {
-          possiblePositions.push(newPosition);
-          newPosition = this.generatePosition(xPosition, xMove, yPosition, yMove);
-          xPosition = newPosition[0];
-          yPosition = newPosition[1];
-        }
-      }
     this.possiblePositions = possiblePositions;
     return possiblePositions;
-  };
+    }
 };
 customElements.define("pawn-custom", Pawn, { extends: "div" });
 
 class Rook extends RookBishopQueen {
-    constructor(position, color) {
+    constructor(position, color, pieceId) {
       super();
+      this.pieceId = color + "r" + pieceId;
       this.position = position;
       this.possiblePositions = [];
       this.color = color;
@@ -355,8 +507,9 @@ class Rook extends RookBishopQueen {
 customElements.define("rook-custom", Rook, { extends: "div" });
 
 class Bishop extends RookBishopQueen {
-    constructor(position, color) {
+    constructor(position, color, pieceId) {
       super();
+      this.pieceId = color + "b" + pieceId;
       this.position = position;
       this.possiblePositions = [];
       this.color = color;
@@ -373,9 +526,34 @@ class Bishop extends RookBishopQueen {
 };
 customElements.define("bishop-custom", Bishop, { extends: "div" });
 
-class Knight extends KnightKing {
-    constructor(position, color) {
+class Queen extends RookBishopQueen {
+  constructor(position, color, pieceId) {
+    super();
+    this.pieceId = color + "q" + pieceId;
+    this.position = position;
+    this.possiblePositions = [];
+    this.color = color;
+    this.pieceType = this.color + "q"
+    this.selected = false;
+    this.moveArray = [
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ];
+    this.classList.add("piece", this.pieceType ,"square-" + this.position)
+  }
+};
+customElements.define("queen-custom", Queen, { extends: "div" });
+
+class Knight extends Piece {
+    constructor(position, color, pieceId) {
       super();
+      this.pieceId = color + "n" + pieceId;
       this.position = position;
       this.possiblePositions = [];
       this.color = color;
@@ -393,35 +571,30 @@ class Knight extends KnightKing {
       ];
       this.classList.add("piece", this.pieceType ,"square-" + this.position)
     }
+
+    moveConditions = (map) => {
+      const possiblePositions = {"possible":[], "blocked":[]};
+      for (let i = 0; i < this.moveArray.length; i++) {
+        const move = this.moveArray[i];
+        let newPosition = this.generatePosition(this.position,move)
+  
+        if (map.e.includes(newPosition) || !map[this.color].includes(newPosition)
+            && map.e.concat(map.w,map.b).includes(newPosition)) {
+          possiblePositions["possible"].push(newPosition);
+        } else if (map[this.color].includes(newPosition) && map.e.concat(map.w,map.b).includes(newPosition)) {
+          possiblePositions["blocked"].push(newPosition);
+        }
+      }
+      this.possiblePositions = possiblePositions;
+      return possiblePositions;
+    };
 };
 customElements.define("knight-custom", Knight, { extends: "div" });
 
-class Queen extends RookBishopQueen {
-    constructor(position, color) {
+class King extends Piece {
+    constructor(position, color, pieceId) {
       super();
-      this.position = position;
-      this.possiblePositions = [];
-      this.color = color;
-      this.pieceType = this.color + "q"
-      this.selected = false;
-      this.moveArray = [
-        [1, 1],
-        [1, -1],
-        [-1, -1],
-        [-1, 1],
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
-      ];
-      this.classList.add("piece", this.pieceType ,"square-" + this.position)
-    }
-};
-customElements.define("queen-custom", Queen, { extends: "div" });
-
-class King extends KnightKing {
-    constructor(position, color) {
-      super();
+      this.pieceId = color + "k" + pieceId;
       this.position = position;
       this.possiblePositions = [];
       this.color = color;
@@ -439,73 +612,23 @@ class King extends KnightKing {
       ];
       this.classList.add("piece", this.pieceType ,"square-" + this.position)
     }
+
+    moveConditions = (map) => {
+      const possiblePositions = {"possible":[], "blocked":[]};
+      for (let i = 0; i < this.moveArray.length; i++) {
+        const move = this.moveArray[i];
+        let newPosition = this.generatePosition(this.position,move)
+  
+        if (map.e.includes(newPosition) || !map[this.color].includes(newPosition)
+            && map.e.concat(map.w,map.b).includes(newPosition)) {
+          possiblePositions["possible"].push(newPosition);
+        } else if (map[this.color].includes(newPosition) && map.e.concat(map.w,map.b).includes(newPosition)) {
+          possiblePositions["blocked"].push(newPosition);
+        }
+      }
+      this.possiblePositions = possiblePositions;
+      return possiblePositions;
+    };
 };
 customElements.define("king-custom", King, { extends: "div" });
-
-const initChessboard = (chessBoard, fen) => {
-  const fenSplitted = fen.split(/\/| /);
-  for (let i = 0; i < 8; i++) {
-    const fenRange = fenSplitted[i];
-    let j = 0;
-    let p = 1;
-    while (fenRange[j]) {
-        const position = p.toString() + (8-i).toString();
-        const elt = fenRange[j];
-        switch (elt) {
-            case 'r':
-                chessBoard.appendChild(new Rook(position, "b"));
-                p += 1;
-                break;
-            case 'n':
-                chessBoard.appendChild(new Knight(position, "b"));
-                p += 1;
-                break;
-            case 'b':
-                chessBoard.appendChild(new Bishop(position, "b"));
-                p += 1;
-                break;
-            case 'q':
-                chessBoard.appendChild(new Queen(position, "b"));
-                p += 1;
-                break;
-            case 'k':
-                chessBoard.appendChild(new King(position, "b"));
-                p += 1;
-                break;
-            case 'p':
-                chessBoard.appendChild(new Pawn(position, "b"));
-                p += 1;
-                break;
-            case 'R':
-                chessBoard.appendChild(new Rook(position, "w"));
-                p += 1;
-                break;
-            case 'N':
-                chessBoard.appendChild(new Knight(position, "w"));
-                p += 1;
-                break;
-            case 'B':
-                chessBoard.appendChild(new Bishop(position, "w"));
-                p += 1;
-                break;
-            case 'Q':
-                chessBoard.appendChild(new Queen(position, "w"));
-                p += 1;
-                break;
-            case 'K':
-                chessBoard.appendChild(new King(position, "w"));
-                p += 1;
-                break;
-            case 'P':
-                p += 1;
-                chessBoard.appendChild(new Pawn(position, "w"));
-                break;
-            default:
-                p += parseInt(elt)
-            }
-        j += 1;
-    };
-  };
-};
-
 
