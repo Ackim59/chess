@@ -1,13 +1,13 @@
 export { ChessBoard };
 
 
-let otherPiece;
-
 class ChessBoard extends HTMLElement {
     constructor() {
         super();
         this.fen = "";
         this.pieceCollection = {"w":[] , "b":[]};
+        this.whiteKing = undefined;
+        this.blackKing = undefined;
         this.pattern = {"w":[] , "b":[]};
         this.map = {};
         this.currentPiece = undefined;
@@ -71,6 +71,7 @@ class ChessBoard extends HTMLElement {
                 case 'k':
                     piece = new King(position, "b", k);
                     this.pieceCollection.b.push(piece);
+                    this.blackKing = piece;
                     this.pieceCollection[piece.pieceId] = piece;
                     this.appendChild(piece);
                     k += 1
@@ -119,6 +120,7 @@ class ChessBoard extends HTMLElement {
                 case 'K':
                     piece = new King(position, "w", k);
                     this.pieceCollection.w.push(piece);
+                    this.whiteKing = piece;
                     this.pieceCollection[piece.pieceId] = piece;
                     this.appendChild(piece);
                     k += 1;
@@ -199,6 +201,50 @@ class ChessBoard extends HTMLElement {
             this.pattern[this.otherPiece.color] = this.pattern[this.otherPiece.color].concat(this.pattern[id]["possible"]);
           }
         }
+      }
+    }
+
+    testCheck = (newPosition) => {
+      // We get the king position of the current color.
+      // And we test if the king of the currentPiece camp is already in check.
+      // If it is the case only the movements which free the king are authorized.
+      let kingPosition;
+      if (this.currentPiece.color == "w") {
+        if (this.currentPiece != this.whiteKing) {
+          kingPosition = this.whiteKing.position;
+        } else {
+          kingPosition = newPosition
+        }
+      } else {
+        if (this.currentPiece != this.blackKing) {
+          kingPosition = this.blackKing.position;
+        } else {
+          kingPosition = newPosition
+        }
+      }
+
+      // We calculate the new current color map if the movement was made.
+      const currentColor = this.currentPiece.color;
+      const currentPosition = this.currentPiece.position;
+      const newMap = {"w":this.map.w.slice(), "b":this.map.b.slice(), "e":this.map.e.slice()};
+      newMap[currentColor].splice(newMap[currentColor].indexOf(currentPosition),1);
+      newMap[currentColor].push(newPosition);
+      newMap.e.splice(newMap.e.indexOf(newPosition),1);
+      newMap.e.push(currentPosition);
+      
+      // We get the new enemy camp pattern if the map of the currentPiece color was newMap.
+      let otherColorNewPattern = [];
+      for (let id in this.pattern) {
+        if (id != "w" && id != "b" && this.pieceCollection[id].color != currentColor
+            && this.pieceCollection[id] != this.otherPiece
+            && !this.pieceCollection[id].classList.value.includes("element-pool")) {
+              otherColorNewPattern = otherColorNewPattern.concat(this.pieceCollection[id].moveConditions(newMap)["possible"]);
+            }
+          }
+      if (otherColorNewPattern.includes(kingPosition)) {
+        return true; // movement is impossible because the king would be in check!
+      } else if (!otherColorNewPattern.includes(kingPosition)) {
+        return false;
       }
     }
 
@@ -369,7 +415,7 @@ class Piece extends HTMLDivElement {
     const actualPosition = this.position;
     let map = chessboard.map;
     if (this.possiblePositions["possible"].includes(newPosition) && chessboard.currentPiece == this
-        && this.position != newPosition) {
+    && this.position != newPosition && !chessboard.testCheck(newPosition)) {
       if (map.e.includes(newPosition)) {
         chessboard.updateMap(newPosition);
         this.changePosition(newPosition);
@@ -386,6 +432,7 @@ class Piece extends HTMLDivElement {
       }
       // Deselection of the currentPiece after move.
       chessboard.currentPieceSelected = false;
+      chessboard.currentPiece = undefined;
     }
   };
 };
@@ -401,7 +448,6 @@ class RookBishopQueen extends Piece {
   }
 
   moveConditions = (map) => {
-    
     const possiblePositions = {"possible":[], "blocked":[]};
     for (let i = 0; i < this.moveArray.length; i++) {
       const move = this.moveArray[i];
