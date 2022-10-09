@@ -11,6 +11,7 @@ class ChessBoard extends HTMLElement {
         this.pattern = {"w":[] , "b":[]};
         this.map = {};
         this.currentPiece = undefined;
+        this.currentPieceSelected = false;
         this.otherPiece = undefined;
 
         const boardLayout = document.getElementById("board-layout");
@@ -167,32 +168,36 @@ class ChessBoard extends HTMLElement {
       }
     }
 
-    updatePattern = (previousPosition) => {
+    updatePattern = (actualPosition) => {
       const newPosition = this.currentPiece.position;
       const color = this.currentPiece.color;
-      // We update pattern of pieces for which possible positions are different after piece move.
-      for (let id in this.pattern) {
-        if (this.pieceCollection[id].color == color && id != "w" && id != "b" && this.pieceCollection[id] != this.currentPiece) {
-          if (this.pattern[id]["possible"].includes(previousPosition)
-          || this.pattern[id]["possible"].includes(newPosition)
-          || this.pattern[id]["blocked"].includes(previousPosition)
-          || this.pattern[id]["blocked"].includes(newPosition)) {
-            this.pattern[id] = this.pieceCollection[id].moveConditions(this.map);
-          }
-        } else if (this.pieceCollection[id] == this.currentPiece) {
-          this.pattern[id] = this.currentPiece.moveConditions(this.map);
-        }
-      }
       this.pattern[color] = [];
+      // if there is capture (i.e. otherPiece is defined) we set to zero the pattern of the captured piece.
       if (this.otherPiece) {
         this.pattern[this.otherPiece.color] = [];
         this.pattern[this.otherPiece.pieceId] = {"possible":[],"blocked":[]};
       }
+      // We update pattern of pieces after piece move.
       for (let id in this.pattern) {
-        if (id != "w" && id != "b" && this.pieceCollection[id].color == color) {
-          this.pattern[color] = this.pattern[color].concat(this.pattern[id]["possible"]);
-        } else if (this.otherPiece && id != "w" && id != "b" && this.pieceCollection[id].color != color) {
-          this.pattern[this.otherPiece.color] = this.pattern[this.otherPiece.color].concat(this.pattern[id]["possible"]);
+        if (id != "w" && id != "b") {
+          if (this.pieceCollection[id].color == color) {
+            if (this.pieceCollection[id] != this.currentPiece) {
+              if (this.pattern[id]["possible"].includes(actualPosition)
+              || this.pattern[id]["possible"].includes(newPosition)
+              || this.pattern[id]["blocked"].includes(actualPosition)
+              || this.pattern[id]["blocked"].includes(newPosition)) {
+                this.pattern[id] = this.pieceCollection[id].moveConditions(this.map);
+              }
+            } else {
+              // We recalculate the pattern of the currentPiece moved.
+              this.pattern[id] = this.currentPiece.moveConditions(this.map);
+            }
+            // We recalculate the complete pattern of the color of the currentPiece moved.
+            this.pattern[color] = this.pattern[color].concat(this.pattern[id]["possible"]);
+          } else if (this.otherPiece) {
+            // We recalculate the complete pattern of the color of the otherPiece captured.
+            this.pattern[this.otherPiece.color] = this.pattern[this.otherPiece.color].concat(this.pattern[id]["possible"]);
+          }
         }
       }
     }
@@ -311,37 +316,33 @@ class Piece extends HTMLDivElement {
     }
   }
 
-  changeSelection = (piece) => {
-    piece.selected = !piece.selected; 
+  changePiece = () => {
+    const chessboard = document.getElementsByTagName("chess-board")[0];
+    chessboard.currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern);
+    chessboard.currentPiece = this;
+    chessboard.currentPieceSelected = true;
+    chessboard.currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
   }
 
   selection = (e) => {
     const chessboard = document.getElementsByTagName("chess-board")[0];
-    let map = chessboard.map;
-    this.possiblePositions = this.moveConditions(map);
-    if (chessboard.currentPiece != this) {
-      if (chessboard.currentPiece == undefined) {
-        this.selected = true;
-        chessboard.currentPiece = this;
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
-      } else if (chessboard.currentPiece.color == this.color || !chessboard.currentPiece.selected) {
-        chessboard.currentPiece.possiblePositions["possible"].forEach(chessboard.currentPiece.removePositionsPattern)
-        this.selected = true;
-        chessboard.currentPiece = this;
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
-      } else if (chessboard.currentPiece.possiblePositions["possible"].includes(e.target.position)) {
-        chessboard.otherPiece = this;
-      } else {
-        this.changeSelection(chessboard.currentPiece);
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern);
-      }
+    this.possiblePositions = this.moveConditions(chessboard.map);
+    if (chessboard.currentPiece == undefined) {
+      chessboard.currentPiece = this;
+      this.changePiece();
+    } else if (chessboard.currentPiece == this && !chessboard.currentPieceSelected) {
+      this.changePiece();
+    } else if (chessboard.currentPiece == this && chessboard.currentPieceSelected) {
+      chessboard.currentPieceSelected = false;
+      chessboard.currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern);
+    } else if ((chessboard.currentPiece.color == this.color) || (chessboard.currentPiece.color != this.color
+                && !chessboard.currentPiece.possiblePositions["possible"].includes(e.target.position))) {
+      this.changePiece();
+    } else if (!chessboard.currentPiece.possiblePositions["possible"].includes(e.target.position)) {
+      this.changePiece();
     } else {
-      this.changeSelection(chessboard.currentPiece);
-      if (chessboard.currentPiece.selected) {
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.displayPositionsPattern);
-      } else {
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern);
-      }
+      // Definition of the otherPiece for future eventual capture.
+      chessboard.otherPiece = this;
     }
   }
 
@@ -360,32 +361,32 @@ class Piece extends HTMLDivElement {
         this.classList.add("square-" + newPosition)
       };
     this.position = newPosition;
-    this.selected = false;
     }
   }
 
   move = (newPosition) => {
     const chessboard = document.getElementsByTagName("chess-board")[0];
-    const previousPosition = this.position;
+    const actualPosition = this.position;
     let map = chessboard.map;
-    if (this.possiblePositions["possible"].includes(newPosition) && this.selected && this.position != newPosition) {
+    if (this.possiblePositions["possible"].includes(newPosition) && chessboard.currentPiece == this
+        && this.position != newPosition) {
       if (map.e.includes(newPosition)) {
         chessboard.updateMap(newPosition);
         this.changePosition(newPosition);
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern)
+        this.possiblePositions["possible"].forEach(this.removePositionsPattern);
         // mise à jour des couvertures
-        chessboard.updatePattern(previousPosition);
-
+        chessboard.updatePattern(actualPosition);
       } else if (!map.e.includes(newPosition) && !map[this.color].includes(newPosition)) {
         chessboard.updateMap(newPosition)
         chessboard.otherPiece.className = "element-pool"; // the captured piece is moved off the chessboard
         this.changePosition(newPosition)
-        chessboard.currentPiece.possiblePositions["possible"].forEach(this.removePositionsPattern)
+        this.possiblePositions["possible"].forEach(this.removePositionsPattern);
         // mise à jour des couvertures
-        chessboard.updatePattern(previousPosition);
+        chessboard.updatePattern(actualPosition);
       }
+      // Deselection of the currentPiece after move.
+      chessboard.currentPieceSelected = false;
     }
-    console.log(chessboard.pattern);
   };
 };
 
@@ -432,7 +433,6 @@ class Pawn extends Piece {
     this.initialPosition = position;
     this.color = color;
     this.pieceType = this.color + "p";
-    this.selected = false;
     this.classList.add("piece", this.pieceType ,"square-" + this.position);
   }
 
@@ -495,7 +495,6 @@ class Rook extends RookBishopQueen {
       this.possiblePositions = [];
       this.color = color;
       this.pieceType = this.color + "r";
-      this.selected = false;
       this.moveArray = [
             [1, 0],
             [-1, 0],
@@ -515,7 +514,6 @@ class Bishop extends RookBishopQueen {
       this.possiblePositions = [];
       this.color = color;
       this.pieceType = this.color + "b"
-      this.selected = false;
       this.moveArray = [
         [1, 1],
         [1, -1],
@@ -535,7 +533,6 @@ class Queen extends RookBishopQueen {
     this.possiblePositions = [];
     this.color = color;
     this.pieceType = this.color + "q"
-    this.selected = false;
     this.moveArray = [
       [1, 1],
       [1, -1],
@@ -559,7 +556,6 @@ class Knight extends Piece {
       this.possiblePositions = [];
       this.color = color;
       this.pieceType = this.color + "n"
-      this.selected = false;
       this.moveArray = [
         [2, 1],
         [2, -1],
@@ -600,7 +596,6 @@ class King extends Piece {
       this.possiblePositions = [];
       this.color = color;
       this.pieceType = this.color + "k"
-      this.selected = false;
       this.moveArray = [
         [1, 1],
         [1, -1],
